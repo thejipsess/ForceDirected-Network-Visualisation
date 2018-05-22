@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 
 public class ForceDirectedGraph : MonoBehaviour {
     private string[][] ParsedData;
@@ -29,7 +30,9 @@ public class ForceDirectedGraph : MonoBehaviour {
     public Color PosExColor;
     public float EdgeDiameter; // can add functionality to change edge diamter..
     private GameObject ListOfNodesAndEdges; // use this to create hierarchy
-    
+    public string ThreeD;
+    [MenuItem("GameObject/Create Empty Child #&n")]
+
 
     // Use this for initialization
     void Start () {
@@ -48,15 +51,22 @@ public class ForceDirectedGraph : MonoBehaviour {
         for (int i = 1; i < ParsedData.Length; i++)
         {
             spheres.Add(new GameObject());
+            
             spheres[i - 1] = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             spheres[i - 1].AddComponent<Rigidbody>();
             spheres[i - 1].AddComponent<SphereCollider>();
             spheres[i - 1].GetComponent<SphereCollider>().radius = spheres[i - 1].GetComponent<SphereCollider>().radius * 3;
-            spheres[i - 1].AddComponent<MouseDrag>();
+            spheres[i - 1].AddComponent<MouseDrag>(); // redundant with leap motion
             spheres[i - 1].GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeRotation;
             spheres[i - 1].name = ParsedData[i][0];
-
             spheres[i - 1].transform.position = new Vector3(Random.Range(-ParsedData.Length, ParsedData.Length), Random.Range(-ParsedData.Length, ParsedData.Length), Random.Range(-ParsedData.Length, ParsedData.Length));
+            if (ThreeD == "no")
+            {
+                // freeze y position
+                // one of these is probably redundant!
+                spheres[i - 1].GetComponent<Transform>().transform.position = new Vector3(spheres[i - 1].GetComponent<Transform>().transform.position.x, 0, spheres[i - 1].GetComponent<Transform>().transform.position.z);
+                spheres[i - 1].GetComponent<Rigidbody>().transform.position = new Vector3(spheres[i - 1].GetComponent<Rigidbody>().transform.position.x, 0, spheres[i - 1].GetComponent<Rigidbody>().transform.position.z);
+            }
             spheres[i - 1].transform.localScale = new Vector3(5, 5, 5);
             spheres[i - 1].GetComponent<Rigidbody>().mass = 0.00001f;
             var Render = spheres[i - 1].GetComponent<Renderer>();
@@ -70,7 +80,6 @@ public class ForceDirectedGraph : MonoBehaviour {
             {
                 Render.material.color = NegExColor;
             }
-
             // compose the ConnectivityMatrix with indeces from 'spheres' instead of ID's
             for (int j = 1; j < ParsedConnectionData.Length; j++)
             {
@@ -85,6 +94,11 @@ public class ForceDirectedGraph : MonoBehaviour {
 
                     count++;
                 }
+            }
+            GameObject child = spheres[i - 1];
+            if (GameObject.Find("ForceDirectedGrapher").transform != null)
+            {
+                spheres[i - 1].transform.parent = GameObject.Find("ForceDirectedGrapher").transform;
             }
         }
         for (int j = 1; j < ParsedConnectionData.Length; j++)
@@ -131,10 +145,7 @@ public class ForceDirectedGraph : MonoBehaviour {
             }
         }
 
-        for (int i = 0; i < ConnectivityMatrix.GetLength(0); i++)
-        {
-            //print(ConnectivityMatrix[i, 0] + " and " + ConnectivityMatrix[i, 1]);
-        }
+
 
         // Create Cylinders that will act as Connectivity Edges
         for (int i = 0; i < ConnectivityMatrix.Length; i++)
@@ -145,8 +156,6 @@ public class ForceDirectedGraph : MonoBehaviour {
             Edges[i].transform.localScale = new Vector3(0.4f, 0.4f, 0.4f);
             // possibly set edge color.
         }
-
-
 
     }
 
